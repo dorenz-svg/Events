@@ -9,5 +9,8 @@ namespace Events.Models.Entities
 {
     public class ApplicationUser:IdentityUser
     {
+        public IEnumerable<Visitor> Visitors { get; set; }
+        public IEnumerable<Date> Dates { get; set; }
+        public IEnumerable<Event> Events { get; set; }
     }
 }
