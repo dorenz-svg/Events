@@ -1,5 +1,7 @@
+using Events.Infrastructure;
 using Events.Models;
 using Events.Models.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -10,10 +12,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Events
@@ -34,11 +40,36 @@ namespace Events
             services.AddControllers();
             services.AddDbContext<DBContext>(options=>
             options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-            services.AddIdentity <ApplicationUser, IdentityRole>()
+            services.AddIdentity <ApplicationUser, IdentityRole>(opts=> {
+                opts.Password.RequiredLength = 5;   
+                opts.Password.RequireNonAlphanumeric = false;   
+                opts.Password.RequireLowercase = false; 
+                opts.Password.RequireUppercase = false; 
+                opts.Password.RequireDigit = false;
+            })
                .AddEntityFrameworkStores<DBContext>();
+            services.AddScoped<IJwtGenerator, JwtGenerator>();
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+           .AddJwtBearer(
+                   opt =>
+                   {
+                       opt.RequireHttpsMetadata = false;
+                       opt.TokenValidationParameters = new TokenValidationParameters
+                       {
+                           ValidateIssuerSigningKey = true,
+                           IssuerSigningKey = key,
+                           ValidateLifetime = true,
+                           ValidateAudience = false,
+                           ValidateIssuer = false,
+                       };                     
+                   });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Events", Version = "v1" });
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
             });
         }
 
