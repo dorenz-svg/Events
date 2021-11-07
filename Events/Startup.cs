@@ -1,6 +1,8 @@
 using Events.Infrastructure;
 using Events.Models;
 using Events.Models.Entities;
+using Events.Models.Repositories;
+using Events.Models.Repositories.Abstract;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -49,6 +51,8 @@ namespace Events
             })
                .AddEntityFrameworkStores<DBContext>();
             services.AddScoped<IJwtGenerator, JwtGenerator>();
+            services.AddScoped<IAlgorithm, Algorithm>();
+            services.AddTransient<IEventRepository, EFEventRepository>();
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
            .AddJwtBearer(
@@ -67,9 +71,6 @@ namespace Events
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Events", Version = "v1" });
-                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-                c.IncludeXmlComments(xmlPath);
             });
         }
 
