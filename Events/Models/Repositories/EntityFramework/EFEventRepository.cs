@@ -1,6 +1,7 @@
 ﻿using Events.Infrastructure;
 using Events.Models.Entities;
 using Events.Models.Repositories.Abstract;
+using Events.Models.Response;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace Events.Models.Repositories
                     context.Dates.Add(tempDate);
                 }
             }
-            if (await context.Visitors.Where(x => x.EventId == idEvent && x.UserId == idUser).AnyAsync())
+            if (!(await context.Visitors.Where(x => x.EventId == idEvent && x.UserId == idUser).AnyAsync()))
             {
                 context.Visitors.Add(new Visitor { Id = 0, EventId = idEvent, UserId = idUser });
             }
@@ -40,21 +41,25 @@ namespace Events.Models.Repositories
         {
             var tempEvent = new Event() { Id = 0, Name = name, UserId = idUser };
             context.Events.Add(tempEvent);
+            context.Visitors.Add(new Visitor { Id = 0, Event = tempEvent, UserId = idUser });
             await context.SaveChangesAsync();
             return tempEvent.Id.ToString();
         }
 
-        public async Task<IEnumerable<string>> GetListEvents(string idUser)
-            => await context.Visitors.Include(x => x.Event).Where(x => x.UserId == idUser).Select(x => x.Event.Name).ToListAsync();
+        public async Task<IEnumerable<EventsResponse>> GetListEvents(string idUser)
+            => await context.Visitors.Include(x => x.Event)
+            .Where(x => x.UserId == idUser)
+            .Select(x => new EventsResponse { Name=x.Event.Name,IdEvent=x.EventId }).ToListAsync();
 
         public async Task<(DateTime?, DateTime?)> KnowTimeEvent(string idUser, long idEvent)
         {
-            if (!await context.Events.Where(x => x.Id == idEvent && x.UserId == idUser).AnyAsync())
+            if (await context.Events.Where(x => x.Id == idEvent && x.UserId == idUser).AnyAsync())
             {
                 var tempDate = await (from x in context.Users.Include(x => x.Dates)
-                               select x.Dates.Where(c=>c.UserId==x.Id && c.EventId==idEvent)
-                               .ToDictionary(x=>x.DateBegin,y=>y.DateEnd)).ToListAsync();
-                return algorithm.GetDate(tempDate);
+                               select x.Dates.Where(c=>c.UserId==x.Id && c.EventId==idEvent))
+                               .ToListAsync();
+                var temp= tempDate.Select(x=>x.ToDictionary(k => k.DateBegin, y => y.DateEnd)).ToList();
+                return algorithm.GetDate(temp);
             }
             return (null, null) ;
         }

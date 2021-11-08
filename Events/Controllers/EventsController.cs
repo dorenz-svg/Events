@@ -1,5 +1,6 @@
 ﻿using Events.Models.Query;
 using Events.Models.Repositories.Abstract;
+using Events.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,19 +12,19 @@ using System.Threading.Tasks;
 
 namespace Events.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class EventsController : ControllerBase
     {
         private readonly IEventRepository repository;
         public EventsController(IEventRepository repo) => repository = repo;
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<string>>> GetEvents()
+        public async Task<ActionResult<IEnumerable<EventsResponse>>> GetEvents()
         {
             return Ok(await repository.GetListEvents(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
         }
-        [HttpPost("createEvent")]
+        [HttpPost("create")]
         public async Task<ActionResult<string>> CreateEvent(string name)
         {
             return Ok(await repository.CreateEvent(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, name));

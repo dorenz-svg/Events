@@ -42,14 +42,17 @@ namespace Events
             services.AddControllers();
             services.AddDbContext<DBContext>(options=>
             options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-            services.AddIdentity <ApplicationUser, IdentityRole>(opts=> {
-                opts.Password.RequiredLength = 5;   
-                opts.Password.RequireNonAlphanumeric = false;   
-                opts.Password.RequireLowercase = false; 
-                opts.Password.RequireUppercase = false; 
+            var builder = services.AddIdentityCore<ApplicationUser>(opts =>
+            {
+                opts.Password.RequiredLength = 5;
+                opts.Password.RequireNonAlphanumeric = false;
+                opts.Password.RequireLowercase = false;
+                opts.Password.RequireUppercase = false;
                 opts.Password.RequireDigit = false;
-            })
-               .AddEntityFrameworkStores<DBContext>();
+            });
+            var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
+            identityBuilder.AddSignInManager<SignInManager<ApplicationUser>>();
+            identityBuilder.AddEntityFrameworkStores<DBContext>();
             services.AddScoped<IJwtGenerator, JwtGenerator>();
             services.AddScoped<IAlgorithm, Algorithm>();
             services.AddTransient<IEventRepository, EFEventRepository>();

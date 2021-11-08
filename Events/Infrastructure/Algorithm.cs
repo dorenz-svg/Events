@@ -12,7 +12,7 @@ namespace Events.Infrastructure
         public (DateTime?,DateTime?) GetDate(List<Dictionary<DateTime, DateTime?>> dates)
         {
             var beginDate = GetTime(dates, true);
-            var endDate = GetTime(dates, true,beginDate);
+            var endDate = GetTime(dates, false,beginDate);
             return (beginDate,endDate);
         }
         private DateTime? GetTime(List<Dictionary<DateTime, DateTime?>> dates, bool isBeginDate, DateTime? beginDate = null)
@@ -24,13 +24,15 @@ namespace Events.Infrastructure
                 {
                     DateTime? temp = isBeginDate ? d.Key : d.Value;
                     int count = 0;
-                    for (int k = 0; k < dates.Count && k != i; k++)
+                    for (int k = 0; k < dates.Count; k++)
                     {
+                        if (k == i)
+                            continue;
                         foreach (var item in dates[k])
                         {
                             if (isBeginDate)
                             {
-                                if (item.Key <= temp && item.Value >= temp)
+                                if (item.Key <= temp && item.Value > temp)
                                 {
                                     count++;
                                     break;
@@ -38,7 +40,7 @@ namespace Events.Infrastructure
                             }
                             else
                             {
-                                if(item.Key <= temp && item.Value >= temp && beginDate > temp)
+                                if( item.Value <= temp && beginDate < temp && beginDate>= item.Key )
                                 {
                                     count++;
                                     break;
@@ -47,7 +49,7 @@ namespace Events.Infrastructure
                         }
                     }
                     if (count == dates.Count - 1)
-                        return result;
+                        return temp;
                 }
             }
             return result;
