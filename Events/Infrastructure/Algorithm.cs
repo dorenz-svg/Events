@@ -1,28 +1,29 @@
-﻿using Events.Models.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Events.Infrastructure
 {
     public class Algorithm : IAlgorithm
     {
-        public (DateTime?,DateTime?) GetDate(List<Dictionary<DateTime, DateTime?>> dates)
+        /// <summary>
+        /// алгоритм пересечения дат
+        /// </summary>
+        /// <param name="dates"></param>
+        /// <returns>возвращает либо диапозон дат либо фиксированную дату</returns>
+        public (DateTime?, DateTime?) GetDate(List<Dictionary<DateTime, DateTime?>> dates)
         {
-            var beginDate = GetTime(dates, true);
-            var endDate = GetTime(dates, false,beginDate);
-            return (beginDate,endDate);
+            var beginDate = GetTime(dates);
+            var endDate = GetTime(dates, beginDate);
+            return (beginDate, endDate);
         }
-        private DateTime? GetTime(List<Dictionary<DateTime, DateTime?>> dates, bool isBeginDate, DateTime? beginDate = null)
+        private DateTime? GetTime(List<Dictionary<DateTime, DateTime?>> dates, DateTime? beginDate = null)
         {
             DateTime? result = null;
             for (int i = 0; i < dates.Count; i++)
             {
                 foreach (var d in dates[i])
                 {
-                    DateTime? temp = isBeginDate ? d.Key : d.Value;
+                    DateTime? temp = beginDate is null ? d.Key : d.Value;
                     int count = 0;
                     for (int k = 0; k < dates.Count; k++)
                     {
@@ -30,9 +31,9 @@ namespace Events.Infrastructure
                             continue;
                         foreach (var item in dates[k])
                         {
-                            if (isBeginDate)
+                            if (beginDate is null)
                             {
-                                if (item.Key <= temp && item.Value > temp)
+                                if (item.Key <= temp && item.Value is null || item.Value > temp)
                                 {
                                     count++;
                                     break;
@@ -40,7 +41,7 @@ namespace Events.Infrastructure
                             }
                             else
                             {
-                                if( item.Value <= temp && beginDate < temp && beginDate>= item.Key )
+                                if (item.Value <= temp && beginDate < temp && beginDate >= item.Key)
                                 {
                                     count++;
                                     break;

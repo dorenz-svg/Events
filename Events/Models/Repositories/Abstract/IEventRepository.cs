@@ -11,7 +11,7 @@ namespace Events.Models.Repositories.Abstract
     {
         public Task<string> CreateEvent(string idUser,string name);
         public Task AddVisitorAndDates(long idEvent,string idUser,  Dictionary<DateTime, DateTime?> dates);
-        public Task<IEnumerable<EventsResponse>> GetListEvents(string idUser);
+        public Task<EventsResponse> GetListEvents(string idUser);
         public Task<(DateTime?,DateTime?)> KnowTimeEvent(string idUser,long idEvent);
     }
 }
