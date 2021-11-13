@@ -51,12 +51,14 @@ namespace Events.DataAccess.Repositories
 
         public async Task<AuthResponse> Registration(RegistrationRequest request)
         {
-            if (await _context.Users.AsNoTracking().Where(x => x.Email == request.Email).AnyAsync())
+            bool isEmailFree = await _context.Users.AsNoTracking().Where(x => x.Email == request.Email).AnyAsync();
+            if (isEmailFree)
             {
                 return null;
             }
 
-            if (await _context.Users.AsNoTracking().Where(x => x.UserName == request.UserName).AnyAsync())
+            bool isUserNameFree = await _context.Users.AsNoTracking().Where(x => x.UserName == request.UserName).AnyAsync();
+            if (isUserNameFree)
             {
                 return null;
             }
