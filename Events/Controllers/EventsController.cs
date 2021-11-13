@@ -1,10 +1,11 @@
-﻿using Events.Models.Query;
+﻿using Events.Models.Request;
 using Events.Models.Repositories.Abstract;
 using Events.Models.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -17,33 +18,36 @@ namespace Events.Controllers
     [ApiController]
     public class EventsController : ControllerBase
     {
-        private readonly IEventRepository repository;
-        public EventsController(IEventRepository repo) => repository = repo;
+        public string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        private readonly IEventRepository _repository;
+        public EventsController(IEventRepository repository) => _repository = repository;
+
         [HttpGet]
         public async Task<ActionResult<EventsResponse>> GetEvents()
         {
-            return Ok(await repository.GetListEvents(User.FindFirst(ClaimTypes.NameIdentifier)?.Value));
+            return Ok(await _repository.GetListEvents(UserId));
         }
-        [HttpPost("create")]
-        public async Task<ActionResult<string>> CreateEvent(string name)
+
+        [HttpPost]
+        public async Task<ActionResult<string>> CreateEvent([Required] string nameEvent)
         {
-            if (name is null)
-                return BadRequest("The Name field is required.");
-            return Ok(await repository.CreateEvent(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, name));
+            return Ok(await _repository.CreateEvent(UserId, nameEvent));
         }
-        [HttpPost("addDates")]
-        public async Task<ActionResult> AddDates([FromBody]AddDatesQuery query)
+
+        [HttpPost("{idEvent:long}/addUser")]
+        public async Task<ActionResult> AddUser([FromRoute][Range(1, long.MaxValue)] long eventId, AddDatesRequest query)
         {
-            await repository.AddVisitorAndDates((long)query.IdEvent, User.FindFirst(ClaimTypes.NameIdentifier)?.Value, query.Dates);
+            if (query is null)
+                return BadRequest();
+            await _repository.AddVisitorAndDates(eventId, UserId, query.Dates);
             return Ok();
         }
-        [HttpGet("getDate")]
-        public async Task<ActionResult<object>> GetTime(long idEvent)
+
+        [HttpGet("getEventDate")]
+        public async Task<ActionResult<object>> GetEventDate([Range(1, long.MaxValue)] long eventId)
         {
-            if (idEvent == 0)
-                return BadRequest("The IdEvent field is required.");
-            var temp = await repository.KnowTimeEvent(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, idEvent);
-            return Ok(new { DateBegin = temp.Item1, DateEnd = temp.Item2 });
+            var EventDate = await _repository.GetEventDate(UserId, eventId);
+            return Ok(new { DateBegin = EventDate.DateBegin, DateEnd = EventDate.DateBegin });
         }
     }
 }

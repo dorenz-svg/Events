@@ -1,15 +1,8 @@
-﻿using Events.Infrastructure;
-using Events.Models;
-using Events.Models.Entities;
-using Events.Models.Query;
+﻿using Events.Abstractions;
+using Events.Models.Request;
+using Events.Response;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Events.Controllers
@@ -19,71 +12,33 @@ namespace Events.Controllers
     [AllowAnonymous]
     public class AccountController : ControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IAccountRepository _accountRepository;
 
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IJwtGenerator _jwtGenerator;
-        private readonly DBContext _context;
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IJwtGenerator jwtGenerator, DBContext context)
+        public AccountController(IAccountRepository accountRepository)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _jwtGenerator = jwtGenerator;
-            _context = context;
+            _accountRepository = accountRepository;
         }
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<object>> LoginAsync(LoginQuery query)
+        public async Task<ActionResult<AuthResponse>> LoginAsync(LoginRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(query.Email);
-            if (user == null)
-            {
-                return Unauthorized(new { message = "Пользователь не найден" });
-            }
+            var result = await _accountRepository.LogIn(request);
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, query.Password, false);
+            if (result is null)
+                return BadRequest();
 
-            if (result.Succeeded)
-            {
-                return new
-                {
-                    Token = _jwtGenerator.CreateToken(user)
-                };
-            }
-
-            return Unauthorized();
+            return Ok(result);
         }
         [AllowAnonymous]
         [HttpPost("registration")]
-        public async Task<ActionResult<object>> RegistrationAsync([FromBody] RegistrationQuery query)
+        public async Task<ActionResult<AuthResponse>> RegistrationAsync(RegistrationRequest request)
         {
-            if (await _context.Users.Where(x => x.Email == query.Email).AnyAsync())
-            {
-                return BadRequest(new { message = "Email already exist" });
-            }
+            var result = await _accountRepository.LogIn(request);
 
-            if (await _context.Users.Where(x => x.UserName == query.UserName).AnyAsync())
-            {
-                return BadRequest(new { message = "UserName already exist" });
-            }
+            if (result is null)
+                return BadRequest();
 
-            var user = new ApplicationUser
-            {
-                Email = query.Email,
-                UserName = query.UserName
-            };
-
-            var result = await _userManager.CreateAsync(user, query.Password);
-
-            if (result.Succeeded)
-            {
-                return new
-                {
-                    Token = _jwtGenerator.CreateToken(user)
-                };
-            }
-
-            return BadRequest(new { message = "Client creation failed" });
+            return Ok(result);
         }
     }
 }
