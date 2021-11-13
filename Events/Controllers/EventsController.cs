@@ -1,6 +1,7 @@
-﻿using Events.Models.Request;
-using Events.Models.Repositories.Abstract;
+﻿using Events.Models.Repositories.Abstract;
+using Events.Models.Request;
 using Events.Models.Response;
+using Events.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -20,6 +21,7 @@ namespace Events.Controllers
     {
         public string UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         private readonly IEventRepository _repository;
+
         public EventsController(IEventRepository repository) => _repository = repository;
 
         [HttpGet]
@@ -34,20 +36,18 @@ namespace Events.Controllers
             return Ok(await _repository.CreateEvent(UserId, nameEvent));
         }
 
-        [HttpPost("{idEvent:long}/addUser")]
+        [HttpPost("{eventId:long}/addUser")]
         public async Task<ActionResult> AddUser([FromRoute][Range(1, long.MaxValue)] long eventId, AddDatesRequest query)
         {
-            if (query is null)
-                return BadRequest();
             await _repository.AddVisitorAndDates(eventId, UserId, query.Dates);
             return Ok();
         }
 
-        [HttpGet("getEventDate")]
-        public async Task<ActionResult<object>> GetEventDate([Range(1, long.MaxValue)] long eventId)
+        [HttpGet("getDate")]
+        public async Task<ActionResult<EventDateResponse>> GetEventDate([Range(1, long.MaxValue)] long EventId)
         {
-            var EventDate = await _repository.GetEventDate(UserId, eventId);
-            return Ok(new { DateBegin = EventDate.DateBegin, DateEnd = EventDate.DateBegin });
+            var date = await _repository.GetEventDate(UserId, EventId);
+            return Ok(new EventDateResponse{ DateBegin = date.DateBegin, DateEnd = date.DateEnd });
         }
     }
 }

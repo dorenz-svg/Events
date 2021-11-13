@@ -1,3 +1,5 @@
+using Events.Abstractions;
+using Events.DataAccess.Repositories;
 using Events.Infrastructure;
 using Events.Models;
 using Events.Models.Entities;
@@ -30,9 +32,8 @@ namespace Events
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddDbContext<DBContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-
+            services.AddDbContext<DBContext>(options=>
+            options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             var builder = services.AddIdentityCore<ApplicationUser>(opts =>
             {
                 opts.Password.RequiredLength = 5;
@@ -41,28 +42,28 @@ namespace Events
                 opts.Password.RequireUppercase = false;
                 opts.Password.RequireDigit = false;
             });
-
             var identityBuilder = new IdentityBuilder(builder.UserType, builder.Services);
             identityBuilder.AddSignInManager<SignInManager<ApplicationUser>>();
             identityBuilder.AddEntityFrameworkStores<DBContext>();
-
             services.AddScoped<IJwtGenerator, JwtGenerator>();
             services.AddScoped<IAlgorithm, Algorithm>();
             services.AddTransient<IEventRepository, EventRepository>();
+            services.AddTransient<IAccountRepository,AccountRepository>();
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"]));
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-               .AddJwtBearer(
-                       opt =>
+           .AddJwtBearer(
+                   opt =>
+                   {
+                       opt.RequireHttpsMetadata = false;
+                       opt.TokenValidationParameters = new TokenValidationParameters
                        {
-                           opt.RequireHttpsMetadata = false;
-                           opt.TokenValidationParameters = new TokenValidationParameters
-                           {
-                               ValidateIssuerSigningKey = true,
-                               IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["TokenKey"])),
-                               ValidateLifetime = true,
-                               ValidateAudience = false,
-                               ValidateIssuer = false,
-                           };
-                       });
+                           ValidateIssuerSigningKey = true,
+                           IssuerSigningKey = key,
+                           ValidateLifetime = true,
+                           ValidateAudience = false,
+                           ValidateIssuer = false,
+                       };                     
+                   });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Events", Version = "v1" });
@@ -78,11 +79,8 @@ namespace Events
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Events v1"));
             }
-            else
-            {
-                app.UseHttpsRedirection();
-            }
 
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
             app.UseAuthentication();
