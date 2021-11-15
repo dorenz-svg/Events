@@ -103,7 +103,7 @@ namespace Events.Models.Repositories
 
                 var temp = tempDate.Select(x => x.ToDictionary(k => k.DateBegin, y => y.DateEnd)).ToList();
 
-                return _algorithm.GetDate(temp);
+                return _algorithm.FindConvenientDate(null);
             }
             return (null, null);
         }
