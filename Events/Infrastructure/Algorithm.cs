@@ -41,7 +41,7 @@ namespace Events.Infrastructure
         private DateTime? CheckCurrentDate(List<UserDates> usersDates, int skipIndex, Date currentDate, DateTime? beginDate = null)
         {
             DateTime? expectedDate = beginDate is null ? currentDate.DateStart : currentDate.DateEnd;
-            int count = 0;//количество участников кому подойдет эта дата
+            int countUsers = 0;//количество участников кому подойдет эта дата
 
             for (int i = 0; i < usersDates.Count; i++)
             {
@@ -56,7 +56,7 @@ namespace Events.Infrastructure
                         bool isInRange = date.DateStart <= expectedDate && (date.DateEnd is null || date.DateEnd > expectedDate);
                         if (isInRange)
                         {
-                            count++;
+                            countUsers++;
                             break;
                         }
                     }
@@ -65,13 +65,13 @@ namespace Events.Infrastructure
                         bool isInRange = date.DateEnd <= expectedDate && beginDate < expectedDate && beginDate >= date.DateStart;
                         if (isInRange)
                         {
-                            count++;
+                            countUsers++;
                             break;
                         }
                     }
                 }
             }
-            return count == usersDates.Count - 1 ? expectedDate : null;
+            return countUsers == usersDates.Count - 1 ? expectedDate : null;
         }
     }
 }
