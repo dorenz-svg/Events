@@ -38,19 +38,23 @@ namespace Events.Infrastructure
             return null;
         }
 
-        private DateTime? CheckCurrentDate(List<UserDates> usersDates, int currentIndex, Date currentDate, DateTime? beginDate = null)
+        private DateTime? CheckCurrentDate(List<UserDates> usersDates, int skipIndex, Date currentDate, DateTime? beginDate = null)
         {
-            DateTime? temp = beginDate is null ? currentDate.DateStart : currentDate.DateEnd;
-            int count = 0;
+            DateTime? expectedDate = beginDate is null ? currentDate.DateStart : currentDate.DateEnd;
+            int count = 0;//количество участников кому подойдет эта дата
+
             for (int i = 0; i < usersDates.Count; i++)
             {
-                if (i == currentIndex)
+                if (i == skipIndex)
                     continue;
+
                 foreach (var date in usersDates[i].Dates)
                 {
-                    if (beginDate is null)
+                    bool isFindBeginDate = beginDate is null;
+                    if (isFindBeginDate)
                     {
-                        if (date.DateStart <= temp && (date.DateEnd is null || date.DateEnd > temp))
+                        bool isInRange = date.DateStart <= expectedDate && (date.DateEnd is null || date.DateEnd > expectedDate);
+                        if (isInRange)
                         {
                             count++;
                             break;
@@ -58,7 +62,8 @@ namespace Events.Infrastructure
                     }
                     else
                     {
-                        if (date.DateEnd <= temp && beginDate < temp && beginDate >= date.DateStart)
+                        bool isInRange = date.DateEnd <= expectedDate && beginDate < expectedDate && beginDate >= date.DateStart;
+                        if (isInRange)
                         {
                             count++;
                             break;
@@ -66,7 +71,7 @@ namespace Events.Infrastructure
                     }
                 }
             }
-            return count == usersDates.Count - 1 ? temp : null;
+            return count == usersDates.Count - 1 ? expectedDate : null;
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Tests
     public class TestAlgorithm
     {
         [Fact]
-        public void TestGetDate()
+        public void TestFindConvenientDate()
         {
             //arrange
             var service = new Algorithm();
