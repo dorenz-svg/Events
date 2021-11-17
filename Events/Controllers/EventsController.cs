@@ -36,17 +36,17 @@ namespace Events.Controllers
             return Ok(await _repository.CreateEvent(UserId, nameEvent));
         }
 
-        [HttpPost("{eventId:long}/addUser")]
+        [HttpPost("{eventId:long}/user")]
         public async Task<ActionResult> AddUser([FromRoute][Range(1, long.MaxValue)] long eventId, AddDatesRequest query)
         {
             await _repository.AddVisitorAndDates(eventId, UserId, query.Dates);
             return Ok();
         }
 
-        [HttpGet("getDate")]
-        public async Task<ActionResult<EventDateResponse>> GetEventDate([Range(1, long.MaxValue)] long EventId)
+        [HttpGet("{eventId:long}/date")]
+        public async Task<ActionResult<EventDateResponse>> GetEventDate([FromRoute][Range(1, long.MaxValue)] long eventId)
         {
-            var date = await _repository.GetEventDate(UserId, EventId);
+            var date = await _repository.GetEventDate(UserId, eventId);
             return Ok(new EventDateResponse{ DateBegin = date.DateBegin, DateEnd = date.DateEnd });
         }
     }
