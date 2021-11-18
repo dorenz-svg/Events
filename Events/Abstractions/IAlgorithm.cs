@@ -10,6 +10,6 @@ namespace Events.Infrastructure
 {
     public interface IAlgorithm
     {
-        public (DateTime? dateBegin, DateTime? dateEnd) FindConvenientDate(List<UserDates> usersDates);
+        public (DateTime? dateBegin, DateTime? dateEnd) FindConvenientDate(IEnumerable<Visitors> usersDates);
     }
 }

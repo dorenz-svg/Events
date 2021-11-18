@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Events.Model
 {
-    public class UserDates
+    public class Visitors
     {
         public string UserName { get; set; }
         public IEnumerable<Date> Dates { get; set; }
@@ -17,14 +17,14 @@ namespace Events.Model
         public DateTime DateStart { get; set; }
         public DateTime? DateEnd { get; set; }
 
-        public bool IsInRange(Date date, DateTime dateStart)
+        public bool IsInRange( DateTime dateStart)
         {
-            return date.DateStart <= dateStart && (date.DateEnd is null || dateStart < date.DateEnd);
+            return DateStart <= dateStart && (DateEnd is null || dateStart < DateEnd);
         }
 
-        public bool IsInRange(Date date, DateTime dateStart, DateTime dateEnd)
+        public bool IsInRange( DateTime? dateStart, DateTime? dateEnd)
         {
-            return (date.DateStart <= beginDate && dateEnd >= date.DateEnd) && beginDate < dateEnd;
+            return (DateStart <= dateStart && dateEnd <= DateEnd) && dateStart < dateEnd;
         }
     }
 }
