@@ -7,6 +7,7 @@ namespace Events.Models.Request
     {
         public IEnumerable<Date> Dates { get; set; }
     }
+
     public class Date
     {
         public DateTime DateStart { get; set; }

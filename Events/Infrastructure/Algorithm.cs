@@ -5,6 +5,13 @@ using System.Collections.Generic;
 
 namespace Events.Infrastructure
 {
+
+    /*
+    1) вынести логику из репозиториев
+    2) разнести все по слоям (по проектам)
+    3) jwt generator сделать как middleware
+    4) покрыть код юнит тестами
+    */
     public class Algorithm : IAlgorithm
     {
         /// <summary>
@@ -19,59 +26,93 @@ namespace Events.Infrastructure
 
         private (DateTime? dateBegin, DateTime? dateEnd) GetDate(List<UserDates> usersDates)
         {
-            var beginDate = GetTime(usersDates);
-            var endDate = GetTime(usersDates, beginDate);
+            var beginDate = GetStartDate(usersDates);
+            var endDate = GetEndDate(usersDates, beginDate);
             return (beginDate, endDate);
         }
 
-        private DateTime? GetTime(List<UserDates> usersDates, DateTime? beginDate = null)
+        private DateTime? GetStartDate(List<UserDates> usersDates)
         {
-            for (int i = 0; i < usersDates.Count; i++)
+            foreach (var user in usersDates)
             {
-                foreach (var date in usersDates[i].Dates)
+                foreach (var date in user.Dates)
                 {
-                    var result = CheckCurrentDate(usersDates, i, date, beginDate);
+                    var visitors = usersDates.Where(x => x.Name != user.Name).ToArray();
+                    DateTime? result = null; 
+
+                    result = CheckCurrentDate(visitors, date.DateStart);
+
                     if (result is not null)
                         return result;
                 }
             }
+
             return null;
         }
 
-        private DateTime? CheckCurrentDate(List<UserDates> usersDates, int skipIndex, Date currentDate, DateTime? beginDate = null)
+
+        private DateTime? GetEndDate(List<UserDates> usersDates, DateTime beginDate)
         {
-            DateTime? expectedDate = beginDate is null ? currentDate.DateStart : currentDate.DateEnd;
-            int countUsers = 0;//количество участников кому подойдет эта дата
-
-            for (int i = 0; i < usersDates.Count; i++)
+            foreach (var user in usersDates)
             {
-                if (i == skipIndex)
-                    continue;
-
-                foreach (var date in usersDates[i].Dates)
+                foreach (var date in user.Dates)
                 {
-                    bool isFindBeginDate = beginDate is null;
-                    if (isFindBeginDate)
-                    {
-                        bool isInRange = date.DateStart <= expectedDate && (date.DateEnd is null || date.DateEnd > expectedDate);
-                        if (isInRange)
-                        {
-                            countUsers++;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        bool isInRange = date.DateEnd <= expectedDate && beginDate < expectedDate && beginDate >= date.DateStart;
-                        if (isInRange)
-                        {
-                            countUsers++;
-                            break;
-                        }
-                    }
+                    var visitors = usersDates.Where(x => x.Name != user.Name).ToArray();
+                    DateTime? result = null; 
+
+                    result = CheckCurrentDate(visitors, date.DateEnd, beginDate);
+
+                    if (result is not null)
+                        return result;
                 }
             }
-            return countUsers == usersDates.Count - 1 ? expectedDate : null;
+
+            return null;
+        }
+
+        // private DateTime? GetTime(List<UserDates> usersDates, DateTime? beginDate = null)
+        // {
+        //     foreach (var user in usersDates)
+        //     {
+        //         foreach (var date in user.Dates)
+        //         {
+        //             var visitors = usersDates.Where(x => x.Name != user.Name).ToArray();
+        //             DateTime? result = null; 
+
+
+        //             if (beginDate is null)
+        //             {
+        //                 result = CheckCurrentDate(visitors, date.DateStart);
+        //             }
+        //             else
+        //             {
+        //                 result = CheckCurrentDate(visitors, date.DateEnd, beginDate);
+        //             }
+
+
+        //             if (result is not null)
+        //                 return result;
+        //         }
+        //     }
+        //     return null;
+        // }
+
+        private DateTime? CheckCurrentDate(List<UserDates> visitors, DateTime dateStart)
+        {
+            var countUsers = visitors
+                .Sum(x => x.Dates
+                    .Count(date => date.IsInRange(dateStart));
+
+            return countUsers == usersDates.Count - 1 ? dateStart : null;
+        }
+
+        private DateTime? CheckCurrentDate(List<UserDates> usersDates, DateTime dateEnd, DateTime beginDate)
+        {
+            var countUsers = visitors
+                .Sum(x => x.Dates
+                    .Count(date => date.IsInRange(dateStart, dateEnd));
+
+            return countUsers == usersDates.Count - 1 ? dateEnd : null;
         }
     }
 }
